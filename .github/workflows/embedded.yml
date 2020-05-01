@@ -27,6 +27,14 @@ jobs:
       - name: Setup gox
         run: go get github.com/mitchellh/gox
 
+      - name: Setup packr2
+        run: go get -u github.com/gobuffalo/packr/v2/packr2
+
+      - name: Embed static files
+        run: |
+          export PATH=$PATH:$(go env GOPATH)/bin
+          GO111MODULE=on packr2 --verbose
+
       - name: Create private binaries
         run: |
           REPO_ROOT=$(git rev-parse --show-toplevel)
@@ -43,8 +51,4 @@ jobs:
 
       - name: Upload private binaries
         run: |
-          cp -r assets bin
-          cp -r templates bin
-          mv bin putio-http-interface
-          zip -r putio.zip putio-http-interface
-          gsutil cp putio.zip gs://${PRIVATE_BINARIES_BUCKET}
+          gsutil cp bin/* gs://${PRIVATE_BINARIES_BUCKET}

@@ -38,3 +38,7 @@ img
 
 # Do not includ cmd into Docker image
 cmd
+
+bin/
+*-packr.go
+packrd

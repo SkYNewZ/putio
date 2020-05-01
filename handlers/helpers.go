@@ -7,6 +7,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/gobuffalo/packr/v2"
 	"github.com/gorilla/mux"
 )
 
@@ -18,7 +19,19 @@ type filesTemplate struct {
 
 // RenderTemplate return template and send as response
 func RenderTemplate(w http.ResponseWriter, t *filesTemplate) error {
-	tpl := template.Must(template.ParseFiles("templates/index.go.html"))
+	// Embed templates files in binary
+	box := packr.New("templates", "./templates")
+
+	s, err := box.FindString("index.go.html")
+	if err != nil {
+		return err
+	}
+
+	tpl, err := template.New("index").Parse(s)
+	if err != nil {
+		return err
+	}
+
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	return tpl.Execute(w, t)

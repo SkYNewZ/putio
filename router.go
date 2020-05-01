@@ -13,6 +13,7 @@ import (
 
 	"github.com/SkYNewZ/putio/handlers"
 	"github.com/SkYNewZ/putio/services"
+	"github.com/gobuffalo/packr/v2"
 	muxHandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
@@ -118,8 +119,9 @@ func neuterMiddleware(next http.Handler) http.Handler {
 func newRouter(ticker *time.Ticker) *mux.Router {
 	r := mux.NewRouter().StrictSlash(true)
 
-	// assets (icon)
-	r.PathPrefix(staticDir).Methods(http.MethodGet).Handler(http.StripPrefix(staticDir, http.FileServer(http.Dir("."+staticDir))))
+	// Embed assets in binary
+	box := packr.New(staticDir, staticDirPath)
+	r.PathPrefix(staticDir).Methods(http.MethodGet).Handler(http.StripPrefix(staticDir, http.FileServer(box)))
 
 	ofuscationToken := os.Getenv("OFUSCATION_TOKEN")
 	if ofuscationToken == "" {

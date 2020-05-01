@@ -18,12 +18,33 @@ import (
 )
 
 const (
-	staticDir string = "/assets/"
+	staticDir     string = "/assets/"
+	staticDirPath string = "./assets"
 )
 
 // Define our struct
 type authenticationMiddleware struct {
 	users map[string]string
+}
+
+type statusWriter struct {
+	http.ResponseWriter
+	status int
+	length int
+}
+
+func (w *statusWriter) WriteHeader(status int) {
+	w.status = status
+	w.ResponseWriter.WriteHeader(status)
+}
+
+func (w *statusWriter) Write(b []byte) (int, error) {
+	if w.status == 0 {
+		w.status = 200
+	}
+	n, err := w.ResponseWriter.Write(b)
+	w.length += n
+	return n, err
 }
 
 // Initialize it somewhere
@@ -73,8 +94,12 @@ func contentTypeMiddleware(next http.Handler) http.Handler {
 // Log requests in Apache Common format
 func loggingMiddleWare(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer log.Printf("%s %s - %s", r.Method, r.RequestURI, r.UserAgent())
-		next.ServeHTTP(w, r)
+		start := time.Now()
+		sw := statusWriter{ResponseWriter: w}
+		next.ServeHTTP(&sw, r)
+		duration := time.Since(start)
+
+		log.Printf("%s %s %d %d - %d ms", r.Method, r.RequestURI, sw.status, sw.length, duration.Milliseconds())
 	})
 }
 
